@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Backend Test - Detailed</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        button { padding: 10px 20px; margin: 5px; font-size: 16px; }
+        #result { 
+            background: #f4f4f4; 
+            padding: 15px; 
+            margin-top: 20px; 
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Flight Delay Prediction API Test</h1>
+    
+    <h3>Step 1: Check Backend Status</h3>
+    <button onclick="testRoot()">Test Root Endpoint</button>
+    <button onclick="testHealth()">Test Health Check</button>
+    
+    <h3>Step 2: Test Endpoints</h3>
+    <button onclick="testAnalytics()">Test Analytics</button>
+    <button onclick="testPrediction()">Test Prediction</button>
+    
+    <div id="result"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        const result = document.getElementById('result');
+
+        function log(message, isError = false) {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = isError ? 'error' : 'success';
+            result.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+        }
+
+        async function testRoot() {
+            result.innerHTML = '';
+            log('Testing root endpoint...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/`);
+                const data = await response.json();
+                log('✅ Root endpoint working!');
+                log(JSON.stringify(data, null, 2));
+            } catch (error) {
+                log('❌ Error: ' + error.message, true);
+                log('Backend might not be running on port 8000', true);
+            }
+        }
+
+        async function testHealth() {
+            result.innerHTML = '';
+            log('Testing health endpoint...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (data.status === 'healthy') {
+                    log('✅ Backend is healthy!');
+                } else {
+                    log('⚠️ Backend is unhealthy', true);
+                }
+                log(JSON.stringify(data, null, 2));
+            } catch (error) {
+                log('❌ Error: ' + error.message, true);
+            }
+        }
+
+        async function testAnalytics() {
+            result.innerHTML = '';
+            log('Testing analytics endpoint...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/analytics/summary`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                log('✅ Analytics endpoint working!');
+                log(JSON.stringify(data, null, 2));
+            } catch (error) {
+                log('❌ Error: ' + error.message, true);
+                log('Check if the endpoint path is correct in /docs', true);
+            }
+        }
+
+        async function testPrediction() {
+            result.innerHTML = '';
+            log('Testing prediction endpoint...');
+            
+            const requestData = {
+                departing_port: 'Sydney',
+                arriving_port: 'Melbourne',
+                airline: 'Qantas',
+                month: 'January',
+                year: 2025
+            };
+            
+            log('Request data: ' + JSON.stringify(requestData, null, 2));
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/predictions/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`HTTP ${response.status}: ${JSON.stringify(errorData)}`);
+                }
+                
+                const data = await response.json();
+                log('✅ Prediction successful!');
+                log(JSON.stringify(data, null, 2));
+            } catch (error) {
+                log('❌ Error: ' + error.message, true);
+            }
+        }
+    </script>
+</body>
+</html>
